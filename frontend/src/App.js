@@ -160,6 +160,30 @@ const Navigation = () => {
 
 // Homepage Component
 const Homepage = () => {
+  const [stats, setStats] = useState({
+    total_modules: 4,
+    active_modules: 3,
+    total_flow_rate: 60.7,
+    uptime_percentage: 95
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await apiService.get('/api/statistics');
+        setStats(data);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+        // Keep fallback stats
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
       {/* Hero Section */}
@@ -223,24 +247,30 @@ const Homepage = () => {
       <section className="bg-gradient-to-r from-blue-900 to-cyan-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Current Impact</h2>
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">4</div>
-              <div className="text-lg">Active Modules</div>
+          {loading ? (
+            <div className="flex justify-center">
+              <div className="loading-spinner"></div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">2,450L</div>
-              <div className="text-lg">Water Monitored Daily</div>
+          ) : (
+            <div className="grid md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div className="text-4xl font-bold mb-2">{stats.total_modules}</div>
+                <div className="text-lg">Active Modules</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold mb-2">{stats.total_flow_rate}L</div>
+                <div className="text-lg">Water Monitored Daily</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold mb-2">{stats.regions_covered || 4}</div>
+                <div className="text-lg">Regions Covered</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold mb-2">{Math.round(stats.uptime_percentage)}%</div>
+                <div className="text-lg">Quality Score</div>
+              </div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">4</div>
-              <div className="text-lg">Regions Covered</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">95%</div>
-              <div className="text-lg">Quality Score</div>
-            </div>
-          </div>
+          )}
         </div>
       </section>
     </div>
