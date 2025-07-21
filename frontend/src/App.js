@@ -544,7 +544,7 @@ const StatisticsPage = () => {
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">{avgTds}</div>
               <div className="text-gray-600">Average TDS (ppm)</div>
-              <div className="text-sm text-gray-500">Optimal: <500</div>
+              <div className="text-sm text-gray-500">Optimal: &lt;500</div>
             </div>
             
             <div className="text-center">
