@@ -22,7 +22,36 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Mock Firebase data based on the user's Firebase structure
+// API service functions
+const apiService = {
+  async get(endpoint) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`API Error - GET ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  async post(endpoint, data) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`API Error - POST ${endpoint}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Fallback mock data in case API is unavailable
 const mockFirebaseData = {
   sensors1: {
     id: 'sensors1',
