@@ -51,66 +51,6 @@ const apiService = {
   }
 };
 
-// Fallback mock data in case API is unavailable
-const mockFirebaseData = {
-  sensors1: {
-    id: 'sensors1',
-    name: 'Pipeline Module A1',
-    location: 'Rural District North',
-    coordinates: [28.6139, 77.2090], // Delhi
-    ph: 7.2,
-    tds: 350,
-    water_flow: 15.5,
-    water_level: 85,
-    temperature: 24.5,
-    gps: { lat: 28.6139, lng: 77.2090 },
-    timestamp: new Date().toISOString(),
-    status: 'active'
-  },
-  sensors2: {
-    id: 'sensors2', 
-    name: 'Pipeline Module B2',
-    location: 'Rural District East',
-    coordinates: [28.5355, 77.3910], // Noida
-    ph: 6.8,
-    tds: 425,
-    water_flow: 12.3,
-    water_level: 78,
-    temperature: 26.1,
-    gps: { lat: 28.5355, lng: 77.3910 },
-    timestamp: new Date().toISOString(),
-    status: 'active'
-  },
-  sensors3: {
-    id: 'sensors3',
-    name: 'Pipeline Module C3', 
-    location: 'Rural District West',
-    coordinates: [28.4595, 77.0266], // Gurgaon
-    ph: 7.5,
-    tds: 280,
-    water_flow: 18.7,
-    water_level: 92,
-    temperature: 23.8,
-    gps: { lat: 28.4595, lng: 77.0266 },
-    timestamp: new Date().toISOString(),
-    status: 'active'
-  },
-  sensors4: {
-    id: 'sensors4',
-    name: 'Pipeline Module D4',
-    location: 'Rural District South', 
-    coordinates: [28.4817, 77.1873], // South Delhi
-    ph: 6.9,
-    tds: 390,
-    water_flow: 14.2,
-    water_level: 67,
-    temperature: 25.3,
-    gps: { lat: 28.4817, lng: 77.1873 },
-    timestamp: new Date().toISOString(),
-    status: 'maintenance'
-  }
-};
-
 // Navigation Component
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
