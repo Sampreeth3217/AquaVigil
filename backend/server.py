@@ -7,6 +7,13 @@ import os
 from datetime import datetime, timedelta
 import json
 import uuid
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(title="AquaVIGIL API", description="Water Monitoring System API", version="1.0.0")
@@ -159,6 +166,27 @@ def update_sensor_data(sensor_id: str) -> Dict[str, Any]:
     
     return updated_data
 
+# Email sending function
+def send_contact_email(name, email, subject, message):
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587
+    smtp_user = os.environ.get('AQUAVIGIL_GMAIL_USER')
+    smtp_pass = os.environ.get('AQUAVIGIL_GMAIL_PASS')
+    to_email = 'aquavigil@gmail.com'
+    if not smtp_user or not smtp_pass:
+        raise Exception('Gmail credentials not set in environment variables.')
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+    msg['Subject'] = f"AquaVigil Contact: {subject or 'No Subject'}"
+    body = f"""
+    New contact form submission:\n\nName: {name}\nEmail: {email}\nSubject: {subject}\nMessage:\n{message}\n"""
+    msg.attach(MIMEText(body, 'plain'))
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(smtp_user, to_email, msg.as_string())
+
 # API Routes
 
 @app.get("/")
@@ -286,21 +314,15 @@ async def get_map_data():
 
 @app.post("/api/contact")
 async def submit_contact_message(message: ContactMessage):
-    """Handle contact form submissions"""
+    """Handle contact form submissions and send email to aquavigil@gmail.com"""
     try:
-        # In a real implementation, this would save to database or send email
-        print(f"New contact message from {message.name} ({message.email})")
-        print(f"Subject: {message.subject}")
-        print(f"Message: {message.message}")
-        
-        # Simulate processing
+        send_contact_email(message.name, message.email, message.subject, message.message)
         response = {
             "id": str(uuid.uuid4()),
             "status": "received",
             "message": "Thank you for your message! We will get back to you soon.",
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }
-        
         return JSONResponse(content=response, status_code=201)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing contact message: {str(e)}")

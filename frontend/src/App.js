@@ -7,6 +7,10 @@ import GaugeChart from 'react-gauge-chart';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
+// Ensure Roboto font is loaded (for local dev, add to index.html as well)
+// This import is for most build setups; fallback to Google Fonts CDN in index.html if needed
+
+
 // Get backend URL from environment
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -55,26 +59,40 @@ const apiService = {
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Accept animatedLogoStyle prop for morphing effect
   return (
-    <nav className="bg-gradient-to-r from-blue-900 to-cyan-700 shadow-lg sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-cyan-200 via-cyan-300 to-blue-200/80 shadow-lg sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          <Link to="/" className="text-white text-2xl font-bold">
-            🌊 AquaVIGIL
+          <Link to="/" className="text-cyan-700 text-2xl font-bold drop-shadow-sm" style={typeof window !== 'undefined' && window.animatedLogoStyle ? window.animatedLogoStyle : {}}>
+            🌊 <span className="transition-all duration-500" style={typeof window !== 'undefined' && window.animatedLogoTextStyle ? window.animatedLogoTextStyle : {}}>AQUAVIGIL</span>
           </Link>
-          
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
-            <Link to="/" className="text-white hover:text-cyan-200 transition duration-300">Home</Link>
-            <Link to="/map" className="text-white hover:text-cyan-200 transition duration-300">Map</Link>
-            <Link to="/statistics" className="text-white hover:text-cyan-200 transition duration-300">Statistics</Link>
-            <Link to="/history" className="text-white hover:text-cyan-200 transition duration-300">History</Link>
-            <Link to="/contact" className="text-white hover:text-cyan-200 transition duration-300">Contact</Link>
+          <div className="hidden md:flex space-x-4">
+            {[
+              { to: '/', label: 'Home' },
+              { to: '/map', label: 'Map' },
+              { to: '/statistics', label: 'Statistics' },
+              { to: '/history', label: 'History' },
+              { to: '/contact', label: 'Contact' },
+            ].map(({ to, label }) => (
+              <Link
+                key={label}
+                to={to}
+                className="relative px-5 py-2 rounded-full font-semibold text-cyan-800 bg-white/60 shadow-md border border-cyan-100 hover:bg-cyan-100 hover:text-cyan-900 transition duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                style={{
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 2px 12px 0 rgba(34,211,238,0.10)',
+                  border: '1.5px solid rgba(34,211,238,0.13)',
+                }}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
-
           {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden text-white"
+          <button
+            className="md:hidden text-cyan-700"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,15 +100,30 @@ const Navigation = () => {
             </svg>
           </button>
         </div>
-
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4">
-            <Link to="/" className="block text-white py-2 hover:text-cyan-200">Home</Link>
-            <Link to="/map" className="block text-white py-2 hover:text-cyan-200">Map</Link>
-            <Link to="/statistics" className="block text-white py-2 hover:text-cyan-200">Statistics</Link>
-            <Link to="/history" className="block text-white py-2 hover:text-cyan-200">History</Link>
-            <Link to="/contact" className="block text-white py-2 hover:text-cyan-200">Contact</Link>
+          <div className="md:hidden pb-4 flex flex-col gap-3 items-center">
+            {[
+              { to: '/', label: 'Home' },
+              { to: '/map', label: 'Map' },
+              { to: '/statistics', label: 'Statistics' },
+              { to: '/history', label: 'History' },
+              { to: '/contact', label: 'Contact' },
+            ].map(({ to, label }) => (
+              <Link
+                key={label}
+                to={to}
+                className="w-11/12 px-5 py-2 rounded-full font-semibold text-cyan-800 bg-white/70 shadow border border-cyan-100 hover:bg-cyan-100 hover:text-cyan-900 transition duration-200 text-center"
+                style={{
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 2px 12px 0 rgba(34,211,238,0.10)',
+                  border: '1.5px solid rgba(34,211,238,0.13)',
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         )}
       </div>
@@ -98,8 +131,163 @@ const Navigation = () => {
   );
 };
 
+// Minimalistic animated bubble background overlay
+const BubbleBackground = ({ containerHeight }) => {
+  const [bubbles, setBubbles] = useState([]);
+  const bubblesRef = React.useRef([]);
+  const containerRef = React.useRef();
+  const maxBubbles = 36;
+
+  // Helper to spawn a bubble at a random position with random velocity
+  function spawnBubble(key) {
+    // Random size: 18px to 56px
+    const size = 18 + Math.random() * 38;
+    // Spawn anywhere in the container (not just edges)
+    const x = Math.random(); // 0-1
+    const y = Math.random(); // 0-1
+    // Random direction and slightly reduced speed
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = 0.06 + Math.random() * 0.09; // 0.06-0.15 (slower)
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    // Random alpha for color and opacity, some lighter, some darker
+    const minAlpha = 0.22, maxAlpha = 0.48;
+    const colorAlpha = minAlpha + Math.random() * (maxAlpha - minAlpha);
+    const opacity = colorAlpha; // match opacity to color alpha for more natural look
+    return {
+      key,
+      size,
+      x,
+      y,
+      vx,
+      vy,
+      opacity,
+      born: Date.now(),
+      color: `rgba(34,211,238,${colorAlpha})` // random cyan alpha
+    };
+  }
+
+  // Animation loop
+  const lastTimeRef = React.useRef(Date.now());
+  useEffect(() => {
+    let running = true;
+    // Initialize bubblesRef
+    if (bubblesRef.current.length === 0) {
+      for (let i = 0; i < maxBubbles; i++) {
+        bubblesRef.current.push(spawnBubble(Math.random().toString(36).slice(2)));
+      }
+      setBubbles([...bubblesRef.current]);
+    }
+    function animate() {
+      if (!running) return;
+      const now = Date.now();
+      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.05); // seconds, cap at 50ms
+      lastTimeRef.current = now;
+      let arr = bubblesRef.current.map(b => {
+        let { x, y, vx, vy, size, born } = b;
+        // Bounce off edges
+        if (x <= 0 && vx < 0) vx = -vx;
+        if (x >= 1 && vx > 0) vx = -vx;
+        if (y <= 0 && vy < 0) vy = -vy;
+        if (y >= 1 && vy > 0) vy = -vy;
+        // Move
+        x += vx * dt;
+        y += vy * dt;
+        // Clamp
+        x = Math.max(0, Math.min(1, x));
+        y = Math.max(0, Math.min(1, y));
+        // Fade out after 9s
+        let age = (now - born) / 1000;
+        let opacity = b.opacity * (age > 9 ? Math.max(0, 1 - (age - 9)) : 1);
+        return { ...b, x, y, vx, vy, opacity };
+      });
+      // Remove bubbles older than 10s
+      arr = arr.filter(b => now - b.born < 10000 && b.opacity > 0.01);
+      // Spawn new if needed
+      while (arr.length < maxBubbles) {
+        arr.push(spawnBubble(Math.random().toString(36).slice(2)));
+      }
+      bubblesRef.current = arr;
+      setBubbles([...arr]);
+      requestAnimationFrame(animate);
+    }
+    animate();
+    return () => { running = false; };
+  }, []);
+
+  // Get container size in px
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    function updateSize() {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight
+        });
+      }
+    }
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [containerHeight]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="pointer-events-none absolute left-0 top-0 w-full z-30 overflow-hidden"
+      style={{ height: containerHeight }}
+    >
+      {bubbles.map(b => (
+        <span
+          key={b.key}
+          style={{
+            position: 'absolute',
+            left: b.x * (containerSize.width - b.size),
+            top: b.y * (containerSize.height - b.size),
+            width: b.size,
+            height: b.size,
+            opacity: b.opacity,
+            background: b.color,
+            boxShadow: '0 2px 16px 0 rgba(34,211,238,0.12)',
+            transition: 'opacity 0.3s',
+            pointerEvents: 'none',
+          }}
+          className="rounded-full"
+        />
+      ))}
+    </div>
+  );
+};
+
 // Homepage Component
 const Homepage = () => {
+  // Animation state for cover card and header logo
+  const [coverAnim, setCoverAnim] = useState(0); // 0 = full cover, 1 = fully scrolled
+  useEffect(() => {
+    function onScroll() {
+      if (!pageRef.current) return;
+      const rect = pageRef.current.getBoundingClientRect();
+      // When top of card is at top of viewport, anim=0; when 220px up, anim=1
+      const y = Math.max(0, Math.min(1, -rect.top / 220));
+      setCoverAnim(y);
+      // Expose to Navigation for logo morph
+      if (typeof window !== 'undefined') {
+        window.animatedLogoStyle = {
+          opacity: 1 - y * 0.7,
+          transform: `scale(${1 - y * 0.25})`,
+          transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+        };
+        window.animatedLogoTextStyle = {
+          opacity: 0.3 + y * 0.7,
+          transform: `scale(${0.7 + y * 0.3})`,
+          transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+        };
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   const [stats, setStats] = useState({
     total_modules: 4,
     active_modules: 3,
@@ -124,37 +312,179 @@ const Homepage = () => {
     fetchStats();
   }, []);
 
+  // Ref to measure the height of the landing page
+  const pageRef = React.useRef(null);
+  const [height, setHeight] = useState('100vh');
+  useEffect(() => {
+    if (pageRef.current) {
+      setHeight(`${pageRef.current.offsetHeight}px`);
+    }
+    const handleResize = () => {
+      if (pageRef.current) {
+        setHeight(`${pageRef.current.offsetHeight}px`);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // --- Animated Section Helper ---
+  const sectionRefs = [React.useRef(), React.useRef(), React.useRef()];
+  const [sectionProgress, setSectionProgress] = useState([0, 0, 0]);
+  // sectionProgress[i]: 0 = fully visible, 1 = minimized, animates as you scroll
+
+  useEffect(() => {
+    function onScroll() {
+      const newProgress = sectionRefs.map((ref, i) => {
+        if (!ref.current) return 1;
+        const rect = ref.current.getBoundingClientRect();
+        const vh = window.innerHeight;
+        // Section is fully visible if its center is in the center of viewport
+        const center = rect.top + rect.height / 2;
+        // Progress: 0 when center is at 60% of viewport, 1 when at -40% (above)
+        const prog = Math.max(0, Math.min(1, (vh * 0.6 - center) / (vh * 0.7)));
+        return prog;
+      });
+      setSectionProgress(newProgress);
+      // Animate logo for first section
+      if (typeof window !== 'undefined') {
+        window.animatedLogoStyle = {
+          opacity: 1 - newProgress[0] * 0.7,
+          transform: `scale(${1 - newProgress[0] * 0.25})`,
+          transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+        };
+        window.animatedLogoTextStyle = {
+          opacity: 0.3 + newProgress[0] * 0.7,
+          transform: `scale(${0.7 + newProgress[0] * 0.3})`,
+          transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+        };
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Helper to animate a section
+  function AnimatedSection({ children, index, className, style }) {
+    const prog = sectionProgress[index] || 0;
+    return (
+      <section
+        ref={sectionRefs[index]}
+        className={className}
+        style={{
+          opacity: 1 - prog * 0.7,
+          transform: `scale(${1 - prog * 0.18})`,
+          transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+          willChange: 'opacity, transform',
+          ...style,
+        }}
+      >
+        {children}
+      </section>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
+    <div ref={pageRef} className="min-h-screen bg-gradient-to-b from-cyan-50 to-white relative overflow-x-hidden">
+      <BubbleBackground containerHeight={height} />
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-900 to-cyan-700 text-white py-20">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-            AquaVIGIL
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+      <AnimatedSection index={0} className="relative bg-gradient-to-r from-cyan-200 via-cyan-300 to-blue-200 text-blue-900 py-20">
+        <div className="absolute inset-0 bg-white opacity-30 z-10"></div>
+        <div className="relative max-w-7xl mx-auto px-4 text-center z-20">
+          <div className="flex justify-center mb-6">
+            <div
+              className="relative flex items-center justify-center"
+              style={{
+                width: `${260 - 80 * (sectionProgress[0] || 0)}px`,
+                height: `${260 - 80 * (sectionProgress[0] || 0)}px`,
+                background: 'radial-gradient(circle at 60% 35%, rgba(255,255,255,0.85) 0%, rgba(34,211,238,0.18) 55%, rgba(34,211,238,0.32) 80%, rgba(34,211,238,0.55) 100%)',
+                borderRadius: '50%',
+                boxShadow: '0 8px 32px 0 rgba(34,211,238,0.25), 0 2px 24px 0 rgba(0,0,0,0.10) inset',
+                border: '2.5px solid rgba(34,211,238,0.25)',
+                position: 'relative',
+                overflow: 'visible',
+                zIndex: 30,
+                transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+              }}
+            >
+              {/* Bubble highlight */}
+              <div style={{
+                position: 'absolute',
+                top: `${38 - 10 * (sectionProgress[0] || 0)}px`,
+                left: `${60 - 10 * (sectionProgress[0] || 0)}px`,
+                width: `${60 - 18 * (sectionProgress[0] || 0)}px`,
+                height: `${32 - 10 * (sectionProgress[0] || 0)}px`,
+                background: 'radial-gradient(circle at 60% 40%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 100%)',
+                borderRadius: '50%',
+                filter: 'blur(1.5px)',
+                opacity: 0.85,
+                pointerEvents: 'none',
+                transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+              }} />
+              {/* Bubble shadow at bottom */}
+              <div style={{
+                position: 'absolute',
+                bottom: `${24 - 8 * (sectionProgress[0] || 0)}px`,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: `${110 - 30 * (sectionProgress[0] || 0)}px`,
+                height: `${38 - 12 * (sectionProgress[0] || 0)}px`,
+                background: 'radial-gradient(circle at 50% 60%, rgba(34,211,238,0.18) 0%, rgba(0,0,0,0.10) 100%)',
+                borderRadius: '50%',
+                filter: 'blur(2.5px)',
+                opacity: 0.7,
+                pointerEvents: 'none',
+                transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+              }} />
+              {/* Bubble rim shine */}
+              <div style={{
+                position: 'absolute',
+                top: `${18 - 6 * (sectionProgress[0] || 0)}px`,
+                right: `${38 - 10 * (sectionProgress[0] || 0)}px`,
+                width: `${38 - 12 * (sectionProgress[0] || 0)}px`,
+                height: `${18 - 6 * (sectionProgress[0] || 0)}px`,
+                background: 'radial-gradient(circle at 60% 40%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.01) 100%)',
+                borderRadius: '50%',
+                filter: 'blur(1.5px)',
+                opacity: 0.7,
+                pointerEvents: 'none',
+                transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+              }} />
+              <h1
+                className="akira-heading text-5xl md:text-7xl font-bold animate-fade-in text-cyan-700 drop-shadow-md select-none"
+                style={{
+                  textShadow: '0 2px 16px rgba(34,211,238,0.18), 0 1px 0 #fff',
+                  letterSpacing: '0.04em',
+                  userSelect: 'none',
+                  transition: 'all 0.4s cubic-bezier(.4,1.2,.4,1)',
+                }}
+              >
+                AQUAVIGIL
+              </h1>
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-cyan-800">
             "Ensuring Clean, Efficient, and Accountable Water Distribution"
           </p>
-          <p className="text-lg md:text-xl mb-10 max-w-4xl mx-auto opacity-90">
+          <p className="text-lg md:text-xl mb-10 max-w-4xl mx-auto opacity-90 text-blue-800">
             Solar-powered IoT modules monitoring water supply conditions in real-time through advanced sensors including TDS, pH, water level, flow rate, and GPS tracking.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/map" className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 rounded-lg font-semibold transition duration-300 transform hover:scale-105">
+            <Link to="/map" className="bg-cyan-400 hover:bg-cyan-500 text-white px-8 py-3 rounded-lg font-semibold transition duration-300 transform hover:scale-105 shadow-md">
               View Live Map
             </Link>
-            <Link to="/statistics" className="bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300">
+            <Link to="/statistics" className="bg-white text-cyan-700 px-8 py-3 rounded-lg font-semibold hover:bg-cyan-50 transition duration-300 border border-cyan-200 shadow-md">
               View Statistics
             </Link>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4">
+      <AnimatedSection index={1} className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-16">How AquaVIGIL Works</h2>
-          
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-16">How AQUAVIGIL Works</h2>
           <div className="grid md:grid-cols-3 gap-12">
             <div className="text-center">
               <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -163,7 +493,6 @@ const Homepage = () => {
               <h3 className="text-2xl font-bold text-gray-800 mb-4">IoT Installation</h3>
               <p className="text-gray-600">Solar-powered IoT modules are installed directly into water pipeline systems</p>
             </div>
-            
             <div className="text-center">
               <div className="bg-cyan-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-3xl">📊</span>
@@ -171,7 +500,6 @@ const Homepage = () => {
               <h3 className="text-2xl font-bold text-gray-800 mb-4">Real-time Monitoring</h3>
               <p className="text-gray-600">Sensors continuously monitor TDS, pH, water flow, level, and GPS coordinates</p>
             </div>
-            
             <div className="text-center">
               <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-3xl">🌐</span>
@@ -181,12 +509,12 @@ const Homepage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Quick Stats Preview */}
-      <section className="bg-gradient-to-r from-blue-900 to-cyan-700 text-white py-16">
+      <AnimatedSection index={2} className="bg-gradient-to-r from-cyan-100 via-cyan-200 to-blue-100 text-blue-900 py-16">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Current Impact</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-cyan-700 drop-shadow">Current Impact</h2>
           {loading ? (
             <div className="flex justify-center">
               <div className="loading-spinner"></div>
@@ -194,25 +522,25 @@ const Homepage = () => {
           ) : (
             <div className="grid md:grid-cols-4 gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold mb-2">{stats.total_modules}</div>
-                <div className="text-lg">Active Modules</div>
+                <div className="text-4xl font-bold mb-2 text-cyan-700">{stats.total_modules}</div>
+                <div className="text-lg text-blue-800">Active Modules</div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-2">{stats.total_flow_rate}L</div>
-                <div className="text-lg">Water Monitored Daily</div>
+                <div className="text-4xl font-bold mb-2 text-cyan-700">{stats.total_flow_rate}L</div>
+                <div className="text-lg text-blue-800">Water Monitored Daily</div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-2">{stats.regions_covered || 4}</div>
-                <div className="text-lg">Regions Covered</div>
+                <div className="text-4xl font-bold mb-2 text-cyan-700">{stats.regions_covered || 4}</div>
+                <div className="text-lg text-blue-800">Regions Covered</div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-2">{Math.round(stats.uptime_percentage)}%</div>
-                <div className="text-lg">Quality Score</div>
+                <div className="text-4xl font-bold mb-2 text-cyan-700">{Math.round(stats.uptime_percentage)}%</div>
+                <div className="text-lg text-blue-800">Quality Score</div>
               </div>
             </div>
           )}
         </div>
-      </section>
+      </AnimatedSection>
     </div>
   );
 };
@@ -869,32 +1197,45 @@ const ContactPage = () => {
           <div>
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Development Team</h2>
             
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-blue-600 mb-2">Dr. Sarah Chen</h3>
-                <p className="text-gray-600 mb-2">Project Lead & IoT Engineer</p>
-                <p className="text-sm text-gray-500 mb-3">Specializes in IoT systems and sensor integration for water monitoring solutions.</p>
-                <a href="mailto:sarah.chen@aquavigil.com" className="text-blue-600 hover:underline">
-                  sarah.chen@aquavigil.com
-                </a>
+            <div className="grid gap-6">
+              {/* Sampreeth */}
+              <div className="bg-white rounded-2xl shadow-lg p-7 flex flex-col gap-2 border-l-4 border-blue-600 hover:shadow-2xl transition-transform transform hover:-translate-y-1">
+                <h3 className="text-2xl font-extrabold text-blue-600 mb-1 tracking-tight">N. Sampreeth Chowdary</h3>
+                <p className="text-base text-gray-700 font-medium mb-1">Project Lead &amp; IoT Engineer</p>
+                <p className="text-sm text-gray-500 mb-2">Specializes in IoT systems and sensor integration for water monitoring solutions.</p>
+                <a href="mailto:sampreeth3217@gmail.com" className="text-blue-600 hover:underline text-sm font-semibold">sampreeth3217@gmail.com</a>
               </div>
-              
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-green-600 mb-2">Mark Rodriguez</h3>
-                <p className="text-gray-600 mb-2">Full-Stack Developer</p>
-                <p className="text-sm text-gray-500 mb-3">Develops web applications and data visualization systems for real-time monitoring.</p>
-                <a href="mailto:mark.rodriguez@aquavigil.com" className="text-blue-600 hover:underline">
-                  mark.rodriguez@aquavigil.com
-                </a>
+
+              {/* Gowtham */}
+              <div className="bg-white rounded-2xl shadow-lg p-7 flex flex-col gap-2 border-l-4 border-green-600 hover:shadow-2xl transition-transform transform hover:-translate-y-1">
+                <h3 className="text-2xl font-extrabold text-green-600 mb-1 tracking-tight">G. Gowtham Chowdary</h3>
+                <p className="text-base text-gray-700 font-medium mb-1">Full-Stack Developer &amp; IoT Engineer</p>
+                <p className="text-sm text-gray-500 mb-2">Develops web applications and data visualization systems for real-time monitoring.</p>
+                <a href="mailto:garapatigowtham6@gmail.com" className="text-blue-600 hover:underline text-sm font-semibold">garapatigowtham6@gmail.com</a>
               </div>
-              
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-purple-600 mb-2">Priya Patel</h3>
-                <p className="text-gray-600 mb-2">Data Scientist & Analytics Expert</p>
-                <p className="text-sm text-gray-500 mb-3">Focuses on water quality analysis and predictive modeling for distribution systems.</p>
-                <a href="mailto:priya.patel@aquavigil.com" className="text-blue-600 hover:underline">
-                  priya.patel@aquavigil.com
-                </a>
+
+              {/* Advaith */}
+              <div className="bg-white rounded-2xl shadow-lg p-7 flex flex-col gap-2 border-l-4 border-purple-600 hover:shadow-2xl transition-transform transform hover:-translate-y-1">
+                <h3 className="text-2xl font-extrabold text-purple-600 mb-1 tracking-tight">P. Sai Advaith</h3>
+                <p className="text-base text-gray-700 font-medium mb-1">Data Scientist &amp; Analytics Expert</p>
+                <p className="text-sm text-gray-500 mb-2">Focuses on water quality analysis and predictive modeling for distribution systems.</p>
+                <a href="mailto:advaithparimisetti@gmail.com" className="text-blue-600 hover:underline text-sm font-semibold">advaithparimisetti@gmail.com</a>
+              </div>
+
+              {/* Lalith */}
+              <div className="bg-white rounded-2xl shadow-lg p-7 flex flex-col gap-2 border-l-4 border-pink-500 hover:shadow-2xl transition-transform transform hover:-translate-y-1">
+                <h3 className="text-2xl font-extrabold text-pink-500 mb-1 tracking-tight">K. Sai Lalith</h3>
+                <p className="text-base text-gray-700 font-medium mb-1">Cloud Solutions Architect</p>
+                <p className="text-sm text-gray-500 mb-2">Focuses on water quality analysis and predictive modeling for distribution systems.</p>
+                <a href="mailto:mrsailalith@gmail.com" className="text-blue-600 hover:underline text-sm font-semibold">mrsailalith@gmail.com</a>
+              </div>
+
+              {/* Ruthvik */}
+              <div className="bg-white rounded-2xl shadow-lg p-7 flex flex-col gap-2 border-l-4 border-blue-400 hover:shadow-2xl transition-transform transform hover:-translate-y-1">
+                <h3 className="text-2xl font-extrabold text-blue-400 mb-1 tracking-tight">Venkata Ruthvik Mundlamudi</h3>
+                <p className="text-base text-gray-700 font-medium mb-1">QA/Test Engineer</p>
+                <p className="text-sm text-gray-500 mb-2">Focuses on water quality analysis and predictive modeling for distribution systems.</p>
+                <a href="mailto:m.v.ruthvik123@gmail.com" className="text-blue-600 hover:underline text-sm font-semibold">m.v.ruthvik123@gmail.com</a>
               </div>
             </div>
           </div>
@@ -1002,9 +1343,9 @@ const ContactPage = () => {
               <h3 className="text-lg font-bold mb-4">Project Information</h3>
               <div className="space-y-2 text-sm">
                 <div>📧 General: info@aquavigil.com</div>
-                <div>🔧 Technical Support: support@aquavigil.com</div>
-                <div>🤝 Partnerships: partners@aquavigil.com</div>
-                <div>📱 Emergency: +1 (555) 123-AQUA</div>
+                <div>🔧 Technical Support: aquavigil@gmail.com</div>
+                <div>🤝 Partnerships: aquavigil@gmail.com</div>
+                <div>📱 Emergency: +91 9988994648</div>
               </div>
             </div>
           </div>
@@ -1018,7 +1359,7 @@ const ContactPage = () => {
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div className="App" style={{ fontFamily: 'Roboto, Arial, sans-serif' }}>
         <Navigation />
         <Routes>
           <Route path="/" element={<Homepage />} />
@@ -1034,3 +1375,14 @@ function App() {
 }
 
 export default App;
+
+// Tailwind CSS keyframes for bubble animation (add to App.css):
+// @keyframes bubble {
+//   0% { transform: translateY(0) scale(1); opacity: 0.2; }
+//   10% { opacity: 0.4; }
+//   80% { opacity: 0.4; }
+//   100% { transform: translateY(-90vh) scale(1.08); opacity: 0; }
+// }
+// .animate-bubble {
+//   animation: bubble linear infinite;
+// }
