@@ -387,7 +387,7 @@ const ModuleDataPage = () => {
               <div className={`text-3xl font-bold ${getQualityColor(sensor.tds, 'tds')} mt-2`}>
                 {sensor.tds} <span className="text-sm">ppm</span>
               </div>
-              <div className="text-sm text-gray-500">Optimal: <500 ppm</div>
+              <div className="text-sm text-gray-500">Optimal: &lt;500 ppm</div>
             </div>
           </div>
 
