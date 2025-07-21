@@ -7,6 +7,9 @@ import GaugeChart from 'react-gauge-chart';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
+// Get backend URL from environment
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+
 // Register ChartJS components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement);
 
