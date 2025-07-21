@@ -279,7 +279,56 @@ const Homepage = () => {
 
 // Map Page Component  
 const MapPage = () => {
-  const sensorData = Object.values(mockFirebaseData);
+  const [sensorData, setSensorData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchMapData = async () => {
+      try {
+        const data = await apiService.get('/api/modules');
+        setSensorData(data);
+      } catch (error) {
+        console.error('Failed to fetch map data:', error);
+        setError('Failed to load sensor data. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMapData();
+    
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(fetchMapData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading sensor data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">⚠️ {error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
