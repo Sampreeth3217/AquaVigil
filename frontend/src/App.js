@@ -892,11 +892,24 @@ const ContactPage = () => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Thank you for your message! We will get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const response = await apiService.post('/api/contact', formData);
+      setSubmitMessage('Thank you for your message! We will get back to you soon.');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Contact form submission failed:', error);
+      setSubmitMessage('Sorry, there was an error sending your message. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -951,6 +964,16 @@ const ContactPage = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Get in Touch</h2>
             
             <div className="bg-white rounded-lg shadow-md p-6">
+              {submitMessage && (
+                <div className={`p-4 rounded-lg mb-6 ${
+                  submitMessage.includes('error') || submitMessage.includes('Sorry')
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-green-100 text-green-700 border border-green-200'
+                }`}>
+                  {submitMessage}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -962,7 +985,8 @@ const ContactPage = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                   />
                 </div>
                 
@@ -976,7 +1000,8 @@ const ContactPage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                   />
                 </div>
                 
@@ -988,7 +1013,8 @@ const ContactPage = () => {
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                   >
                     <option value="">Select a subject</option>
                     <option value="demo">Request Demo</option>
@@ -1007,17 +1033,26 @@ const ContactPage = () => {
                     value={formData.message}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     rows="6"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                     placeholder="Tell us about your water monitoring needs or questions..."
                   ></textarea>
                 </div>
                 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Send Message
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <div className="loading-spinner mr-2"></div>
+                      Sending...
+                    </span>
+                  ) : (
+                    'Send Message'
+                  )}
                 </button>
               </form>
             </div>
