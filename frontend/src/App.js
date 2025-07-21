@@ -401,28 +401,68 @@ const MapPage = () => {
 // Module Data Page Component
 const ModuleDataPage = () => {
   const { id } = useParams();
-  const sensor = mockFirebaseData[id];
+  const [sensor, setSensor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!sensor) {
-    return <div className="min-h-screen flex items-center justify-center">Module not found</div>;
+  useEffect(() => {
+    const fetchModuleData = async () => {
+      try {
+        const data = await apiService.get(`/api/modules/${id}`);
+        setSensor(data);
+        
+        // Save to history
+        const history = JSON.parse(localStorage.getItem('aquavigil-history') || '[]');
+        const existingIndex = history.findIndex(item => item.id === data.id);
+        
+        if (existingIndex >= 0) {
+          history.splice(existingIndex, 1);
+        }
+        
+        history.unshift({
+          ...data,
+          viewedAt: new Date().toISOString()
+        });
+        
+        localStorage.setItem('aquavigil-history', JSON.stringify(history.slice(0, 20)));
+      } catch (error) {
+        console.error('Failed to fetch module data:', error);
+        setError('Failed to load module data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModuleData();
+    
+    // Set up real-time updates every 15 seconds for individual module
+    const interval = setInterval(fetchModuleData, 15000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading module data...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Save to history
-  useEffect(() => {
-    const history = JSON.parse(localStorage.getItem('aquavigil-history') || '[]');
-    const existingIndex = history.findIndex(item => item.id === sensor.id);
-    
-    if (existingIndex >= 0) {
-      history.splice(existingIndex, 1);
-    }
-    
-    history.unshift({
-      ...sensor,
-      viewedAt: new Date().toISOString()
-    });
-    
-    localStorage.setItem('aquavigil-history', JSON.stringify(history.slice(0, 20)));
-  }, [sensor]);
+  if (error || !sensor) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">⚠️ {error || 'Module not found'}</div>
+          <Link to="/map" className="bg-blue-600 text-white px-4 py-2 rounded-lg">
+            Back to Map
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const getQualityColor = (value, type) => {
     switch(type) {
