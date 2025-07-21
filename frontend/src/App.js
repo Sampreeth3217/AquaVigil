@@ -620,12 +620,62 @@ const ModuleDataPage = () => {
 
 // Statistics Page Component
 const StatisticsPage = () => {
-  const sensorData = Object.values(mockFirebaseData);
-  
-  const avgPh = (sensorData.reduce((sum, s) => sum + s.ph, 0) / sensorData.length).toFixed(1);
-  const avgTds = Math.round(sensorData.reduce((sum, s) => sum + s.tds, 0) / sensorData.length);
-  const totalFlow = sensorData.reduce((sum, s) => sum + s.water_flow, 0).toFixed(1);
-  const activeModules = sensorData.filter(s => s.status === 'active').length;
+  const [sensorData, setSensorData] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [modulesData, statisticsData] = await Promise.all([
+          apiService.get('/api/modules'),
+          apiService.get('/api/statistics')
+        ]);
+        
+        setSensorData(modulesData);
+        setStats(statisticsData);
+      } catch (error) {
+        console.error('Failed to fetch statistics:', error);
+        setError('Failed to load statistics. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    // Update every minute for statistics
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading statistics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !stats || !sensorData.length) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">⚠️ {error || 'Failed to load statistics'}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const chartData = {
     labels: sensorData.map(s => s.name),
@@ -662,22 +712,22 @@ const StatisticsPage = () => {
         {/* Key Metrics */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">{sensorData.length}</div>
+            <div className="text-4xl font-bold text-blue-600 mb-2">{stats.total_modules}</div>
             <div className="text-gray-600">Total Modules</div>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <div className="text-4xl font-bold text-green-600 mb-2">{activeModules}</div>
+            <div className="text-4xl font-bold text-green-600 mb-2">{stats.active_modules}</div>
             <div className="text-gray-600">Active Modules</div>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <div className="text-4xl font-bold text-cyan-600 mb-2">{totalFlow}L</div>
+            <div className="text-4xl font-bold text-cyan-600 mb-2">{stats.total_flow_rate}L</div>
             <div className="text-gray-600">Total Flow Rate</div>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <div className="text-4xl font-bold text-orange-600 mb-2">4</div>
+            <div className="text-4xl font-bold text-orange-600 mb-2">{stats.regions_covered}</div>
             <div className="text-gray-600">Regions Covered</div>
           </div>
         </div>
@@ -687,22 +737,20 @@ const StatisticsPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Average Quality Metrics</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">{avgPh}</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">{stats.average_ph}</div>
               <div className="text-gray-600">Average pH</div>
               <div className="text-sm text-gray-500">Optimal: 6.5-8.5</div>
             </div>
             
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">{avgTds}</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">{stats.average_tds}</div>
               <div className="text-gray-600">Average TDS (ppm)</div>
               <div className="text-sm text-gray-500">Optimal: &lt;500</div>
             </div>
             
             <div className="text-center">
-              <div className="text-3xl font-bold text-cyan-600 mb-2">
-                {Math.round((sensorData.reduce((sum, s) => sum + s.water_level, 0) / sensorData.length))}%
-              </div>
-              <div className="text-gray-600">Average Level</div>
+              <div className="text-3xl font-bold text-cyan-600 mb-2">{stats.average_temperature}°C</div>
+              <div className="text-gray-600">Average Temperature</div>
               <div className="text-sm text-gray-500">Current status</div>
             </div>
           </div>
@@ -738,7 +786,7 @@ const StatisticsPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">System Health Overview</h2>
           <div className="grid md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-2xl font-bold text-green-600 mb-2">98%</div>
+              <div className="text-2xl font-bold text-green-600 mb-2">{stats.uptime_percentage}%</div>
               <div className="text-gray-600">Uptime</div>
             </div>
             <div>
