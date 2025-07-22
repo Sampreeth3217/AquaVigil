@@ -8,10 +8,6 @@
 <b>Solar-powered IoT Water Quality & Distribution Monitoring Platform</b>
 </p>
 
-<p align="center">
-  <img src="frontend/public/logo192.png" width="120" alt="AquaVigil Logo" />
-</p>
-
 ---
 
 ## 🌊 Overview
@@ -58,16 +54,6 @@ graph TD;
 **DevOps:**
 
 - Docker-ready, Uvicorn, Python 3.11+, dotenv, Pytest, Black, isort
-
----
-
-## 📸 Screenshots
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/your-screenshot-path/dashboard-dark.png" width="700" alt="AquaVigil Dashboard" />
-  <br>
-  <img src="https://user-images.githubusercontent.com/your-screenshot-path/map-dark.png" width="700" alt="AquaVigil Map" />
-</p>
 
 ---
 
